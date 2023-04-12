@@ -12,11 +12,16 @@ public class MainRender : MonoBehaviour {
     private ComputeBuffer light;
     private bool invalidate = true;
     private bool ready = false;
+    public int bounces = 5;
+    public Vector3 sun;
+    public float sunStrength;
 
     void Start() {
         doDisplay = display.FindKernel("display");
         doRender = raytrace.FindKernel("trace");
         doReset = raytrace.FindKernel("reset");
+        raytrace.SetVector("up", transform.up);
+        raytrace.SetVector("sunDirection", sun.normalized);
         transform.hasChanged = true;
     }
 
@@ -30,6 +35,8 @@ public class MainRender : MonoBehaviour {
         if (invalidate) {
             raytrace.SetInt("width", width);
             raytrace.SetInt("height", height);
+            raytrace.SetInt("bounces", bounces);
+            raytrace.SetFloat("sunStrength", sunStrength);
             display.SetInt("width", width);
 
             if (light != null) {

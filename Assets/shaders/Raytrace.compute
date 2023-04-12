@@ -2,8 +2,10 @@
 #pragma kernel reset
 
 RWStructuredBuffer<float3> light;
-int width, height;
+int width, height,  bounces;
 float3 position, viewDirection;
+float3 up, sunDirection;
+float sunStrength;
 
 struct Ray {
     float3 origin;
@@ -72,21 +74,42 @@ void test(inout RayHit hit, RayHit test)  {
 }
 
 RayHit cast(Ray ray) {
+    Material defaultMaterial;
+    defaultMaterial.color = up;
     RayHit hit;
     hit.distance = 10000.0;
-    Material sky;
-    sky.color = float3(0, 0, 0.8);
-    hit.material = sky;
-    hit.position = float3(0,0,0);
-    hit.normal = float3(0,1,0);
+    hit.hit = false;
+    hit.material = defaultMaterial;
+    hit.position = up;
+    hit.normal = up;
     test(hit, testSphere(ray));
     test(hit, testFloor(ray));
     return hit;
 }
 
+float3 environmentLight(float3 direction) {
+    float3 gradient = lerp(float3(.7,.7,1), float3(0,0,1), dot(direction, up));
+    float3 sun = float3(1,1,1) * pow(max(0, dot(direction, sunDirection)), 20) * sunStrength;
+    return gradient + sun;
+}
+
+float3 findColor(Ray ray) {
+    float3 lightAmount = float3(1,1,1);
+    for (int i = 0; i <= bounces; i++) {
+        RayHit hit = cast(ray);
+        if (!hit.hit) {
+            lightAmount *= environmentLight(ray.direction);
+            return lightAmount;
+        }
+        lightAmount *= hit.material.color;
+        ray.origin = hit.position;
+        ray.direction -= 2*dot(ray.direction, hit.normal)*hit.normal;
+    }
+    return lightAmount * environmentLight(ray.direction);
+}
+
 [numthreads(8,8,1)]
 void trace(uint3 id : SV_DispatchThreadID) {
-    float3 up = float3(0, 1, 0);
     int index = id.x + id.y * width;
     float2 screenPosition = (id.xy / float2(width, height) * 2 - float2(1, 1)) * float2(float(width)/float(height), 1);
     float3 left = normalize(cross(up, viewDirection));
@@ -96,5 +119,5 @@ void trace(uint3 id : SV_DispatchThreadID) {
     ray.origin = position;
     ray.direction = pixelDirection;
     RayHit hit = cast(ray);
-    light[index] += hit.material.color;
+    light[index] += findColor(ray);
 }
