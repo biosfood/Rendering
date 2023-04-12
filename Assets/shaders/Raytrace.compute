@@ -1,0 +1,23 @@
+#pragma kernel trace
+#pragma kernel reset
+
+RWStructuredBuffer<float3> light;
+int width, height;
+float3 position, viewDirection;
+
+[numthreads(8,8,1)]
+void reset(uint3 id : SV_DispatchThreadID) {
+    int index = id.x + id.y * width;
+    light[index] = float3(0, 0, 0);
+}
+
+[numthreads(8,8,1)]
+void trace(uint3 id : SV_DispatchThreadID) {
+    float3 up = float3(0, 1, 0);
+    int index = id.x + id.y * width;
+    float2 screenPosition = id.xy / float2(width, height) * 2 - float2(1, 1);
+    float3 left = normalize(cross(up, viewDirection));
+    float3 cameraUp = normalize(cross(viewDirection, left));
+    float3 pixelDirection = normalize(viewDirection + screenPosition.x * left + screenPosition.y * cameraUp);
+    light[index] += pixelDirection;
+}

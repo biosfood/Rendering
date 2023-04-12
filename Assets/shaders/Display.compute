@@ -1,0 +1,11 @@
+#pragma kernel display
+
+RWTexture2D<float4> destination;
+RWStructuredBuffer<float3> light;
+float scale;
+int width;
+
+[numthreads(8,8,1)]
+void display(uint3 id : SV_DispatchThreadID) {
+    destination[id.xy] = float4(light[id.x + id.y * width] * scale, 0);
+}
