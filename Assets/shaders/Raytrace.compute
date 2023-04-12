@@ -15,9 +15,11 @@ struct Ray {
 };
 
 struct Material {
-    float3 color;
+    float4 color;
     float specular;
 };
+
+RWStructuredBuffer<Material> materials;
 
 struct RayHit {
     bool hit;
@@ -79,10 +81,7 @@ RayHit testSphere(Ray ray) {
     result.normal = normalize(x-p);
     result.position = x;
     result.distance = lambda;
-    Material material;
-    material.color = float3(1,0,0);
-    material.specular = 0.5;
-    result.material = material;
+    result.material = materials[2];
     return result;
 }
 
@@ -92,12 +91,16 @@ RayHit testFloor(Ray ray) {
     result.distance = -ray.origin.y / ray.direction.y;
     result.position = ray.origin + result.distance * ray.direction;
     result.normal = up;
-    Material material;
-    material.specular = 0;
-    material.color = float3(0.2,0.2,0.2);
-    result.material = material;
+    float xRemainder = abs(fmod(result.position.x, 2.0));
+    float zRemainder = abs(fmod(result.position.z, 2.0));
+    if (xRemainder < 0.05 || xRemainder > 1.95 || zRemainder < 0.05 || zRemainder > 1.95) {
+        result.material = materials[1];
+    } else {
+        result.material = materials[0];
+    }
     return result;
 }
+
 
 void test(inout RayHit hit, RayHit test)  {
     if (test.hit && test.distance < hit.distance) {
@@ -111,7 +114,7 @@ void test(inout RayHit hit, RayHit test)  {
 
 RayHit cast(Ray ray) {
     Material defaultMaterial;
-    defaultMaterial.color = up;
+    defaultMaterial.color = float4(0,0,0,0);
     RayHit hit;
     hit.distance = 10000.0;
     hit.hit = false;
@@ -135,13 +138,13 @@ float3 findColor(Ray ray, inout uint seed) {
         RayHit hit = cast(ray);
         if (!hit.hit) {
             lightAmount *= environmentLight(ray.direction);
-            return lightAmount;
+            return lightAmount.rgb;
         }
-        ray.origin = hit.position + 0.01 * hit.normal;
+        ray.origin = hit.position;
         float3 specularDirection = reflect(ray.direction, hit.normal);
         float3 diffuseDirection = normalize(hit.normal + randomDirection(seed));
         ray.direction = lerp(diffuseDirection, specularDirection, hit.material.specular);;
-        lightAmount *= hit.material.color;
+        lightAmount *= hit.material.color.rgb;
     }
     return float3(0,0,0);
 }

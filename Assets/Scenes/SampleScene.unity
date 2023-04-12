@@ -324,13 +324,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   display: {fileID: 7200000, guid: b87cad17be0dfbf48922584dac6f8b68, type: 3}
   raytrace: {fileID: 7200000, guid: 785619acb8426fb4ea227f90d42a2232, type: 3}
-  samplesPerUpdate: 1
+  samplesPerUpdate: 100
   samples: 0
-  width: 400
-  height: 400
-  bounces: 1
+  bounces: 5
   sun: {x: 1, y: 3, z: 1}
   sunStrength: 10
+  floorMaterial1:
+    color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 0}
+    specular: 0
+  floorMaterial2:
+    color: {r: 0.6603774, g: 0.4383424, b: 0.12148453, a: 0}
+    specular: 0.5
+  sphereMaterial:
+    color: {r: 0.7075472, g: 0.11681202, b: 0.34563333, a: 0}
+    specular: 0.75
 --- !u!1 &1125892850
 GameObject:
   m_ObjectHideFlags: 0

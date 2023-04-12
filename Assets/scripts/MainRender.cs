@@ -8,21 +8,35 @@ public class MainRender : MonoBehaviour {
     private int doDisplay, doReset, doRender;
     public int samplesPerUpdate = 1;
     public int samples = 0;
-    public int width = 400, height = 400;
-    private ComputeBuffer light;
+    private int width = 400, height = 400;
+    private ComputeBuffer lightData, materialBuffer;
     private bool invalidate = true;
     private bool ready = false;
     public int bounces = 5;
     public Vector3 sun;
     public float sunStrength;
+    public Material floorMaterial1, floorMaterial2, sphereMaterial;
 
     void Start() {
         doDisplay = display.FindKernel("display");
         doRender = raytrace.FindKernel("trace");
         doReset = raytrace.FindKernel("reset");
         raytrace.SetVector("up", transform.up);
-        raytrace.SetVector("sunDirection", sun.normalized);
         transform.hasChanged = true;
+        materialBuffer = new ComputeBuffer(20*20, 20);
+        raytrace.SetBuffer(doRender, "materials", materialBuffer);
+    }
+
+    private void OnValidate() {
+        invalidate = true;
+    }
+
+    private void updateMaterials() {
+        List<Material> materials = new List<Material>();
+        materials.Add(floorMaterial1);
+        materials.Add(floorMaterial2);
+        materials.Add(sphereMaterial);
+        materialBuffer.SetData(materials);
     }
 
     void Update() {
@@ -37,15 +51,17 @@ public class MainRender : MonoBehaviour {
             raytrace.SetInt("height", height);
             raytrace.SetInt("bounces", bounces);
             raytrace.SetFloat("sunStrength", sunStrength);
+            raytrace.SetVector("sunDirection", sun.normalized);
+            updateMaterials();
             display.SetInt("width", width);
 
-            if (light != null) {
-                light.Release();
+            if (lightData != null) {
+                lightData.Release();
             }
-            light = new ComputeBuffer(width * height, 12);
-            display.SetBuffer(doDisplay, "light", light);
-            raytrace.SetBuffer(doRender, "light", light);
-            raytrace.SetBuffer(doReset, "light", light);
+            lightData = new ComputeBuffer(width * height, 12);
+            display.SetBuffer(doDisplay, "light", lightData);
+            raytrace.SetBuffer(doRender, "light", lightData);
+            raytrace.SetBuffer(doReset, "light", lightData);
             raytrace.Dispatch(doReset, width/8, height/8, 1);
 
             if (renderTexture != null) {
