@@ -7,6 +7,8 @@ float3 position, viewDirection;
 float3 up, sunDirection;
 float sunStrength;
 
+static const float PI = 3.14159265f;
+
 struct Ray {
     float3 origin;
     float3 direction;
@@ -14,6 +16,7 @@ struct Ray {
 
 struct Material {
     float3 color;
+    float specular;
 };
 
 struct RayHit {
@@ -22,6 +25,35 @@ struct RayHit {
     float distance;
     Material material;
 };
+
+uint Hash(inout uint s) {
+    s ^= 2747636419u;
+    s *= 2654435769u;
+    s ^= s >> 16;
+    s *= 2654435769u;
+    s ^= s >> 16;
+    s *= 2654435769u;
+    return s;
+}
+
+float random(inout uint seed) {
+    return float(Hash(seed)) / 4294967295.0;
+}
+
+float randomNormal(inout uint seed) {
+    float theta = 2 * PI * random(seed);
+    float rho = sqrt(-2*log(random(seed)));
+    return rho * cos(theta);
+}
+
+float3 randomDirection(inout uint seed) {
+    return normalize(float3(randomNormal(seed), randomNormal(seed), randomNormal(seed)));
+}
+
+float3 randomHemisphereDirection(inout uint seed, float3 normal) {
+    float3 direction = randomDirection(seed);
+    return direction * sign(dot(direction, normal));
+}
 
 [numthreads(8,8,1)]
 void reset(uint3 id : SV_DispatchThreadID) {
@@ -48,7 +80,8 @@ RayHit testSphere(Ray ray) {
     result.position = x;
     result.distance = lambda;
     Material material;
-    material.color = result.normal;
+    material.color = float3(1,0,0);
+    material.specular = 0.5;
     result.material = material;
     return result;
 }
@@ -57,8 +90,10 @@ RayHit testFloor(Ray ray) {
     RayHit result;
     result.hit = ray.direction.y < 0;
     result.distance = -ray.origin.y / ray.direction.y;
-    result.normal = float3(0, 1, 0);
+    result.position = ray.origin + result.distance * ray.direction;
+    result.normal = up;
     Material material;
+    material.specular = 0;
     material.color = float3(0.2,0.2,0.2);
     result.material = material;
     return result;
@@ -67,6 +102,7 @@ RayHit testFloor(Ray ray) {
 void test(inout RayHit hit, RayHit test)  {
     if (test.hit && test.distance < hit.distance) {
         hit.hit = true;
+        hit.position = test.position;
         hit.distance = test.distance;
         hit.material = test.material;
         hit.normal = test.normal;
@@ -93,7 +129,7 @@ float3 environmentLight(float3 direction) {
     return gradient + sun;
 }
 
-float3 findColor(Ray ray) {
+float3 findColor(Ray ray, inout uint seed) {
     float3 lightAmount = float3(1,1,1);
     for (int i = 0; i <= bounces; i++) {
         RayHit hit = cast(ray);
@@ -101,16 +137,21 @@ float3 findColor(Ray ray) {
             lightAmount *= environmentLight(ray.direction);
             return lightAmount;
         }
+        ray.origin = hit.position + 0.01 * hit.normal;
+        float3 specularDirection = reflect(ray.direction, hit.normal);
+        float3 diffuseDirection = normalize(hit.normal + randomDirection(seed));
+        ray.direction = lerp(diffuseDirection, specularDirection, hit.material.specular);;
         lightAmount *= hit.material.color;
-        ray.origin = hit.position;
-        ray.direction -= 2*dot(ray.direction, hit.normal)*hit.normal;
     }
-    return lightAmount * environmentLight(ray.direction);
+    return float3(0,0,0);
 }
+
+int startSeed;
 
 [numthreads(8,8,1)]
 void trace(uint3 id : SV_DispatchThreadID) {
     int index = id.x + id.y * width;
+    uint seed = index + startSeed;
     float2 screenPosition = (id.xy / float2(width, height) * 2 - float2(1, 1)) * float2(float(width)/float(height), 1);
     float3 left = normalize(cross(up, viewDirection));
     float3 cameraUp = normalize(cross(viewDirection, left));
@@ -118,6 +159,5 @@ void trace(uint3 id : SV_DispatchThreadID) {
     Ray ray;
     ray.origin = position;
     ray.direction = pixelDirection;
-    RayHit hit = cast(ray);
-    light[index] += findColor(ray);
+    light[index] += findColor(ray, seed);
 }

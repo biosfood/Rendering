@@ -63,6 +63,7 @@ public class MainRender : MonoBehaviour {
         if (!ready) return;
         samples += samplesPerUpdate;
         for (int i = 0; i < samplesPerUpdate; i++) {
+            raytrace.SetInt("startSeed", Random.Range(int.MinValue, int.MaxValue));
             raytrace.Dispatch(doRender, width/8, height/8, 1);
         }
     }
