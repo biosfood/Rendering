@@ -5,10 +5,39 @@ RWStructuredBuffer<float3> light;
 int width, height;
 float3 position, viewDirection;
 
+struct Ray {
+    float3 origin;
+    float3 direction;
+};
+
+struct RayHit {
+    bool hit;
+    float3 position, normal;
+};
+
 [numthreads(8,8,1)]
 void reset(uint3 id : SV_DispatchThreadID) {
     int index = id.x + id.y * width;
     light[index] = float3(0, 0, 0);
+}
+
+RayHit cast(Ray ray) {
+    RayHit result;
+    result.hit = false;
+    float3 p = float3(0, 0, 0);
+    float3 ap = p-ray.origin;
+    float r = 1;
+    float b =  2 * dot(ap, ray.direction);
+    float c = dot(ap,ap)-r*r;
+    float D = b*b - 4*c;
+    if (D < 0) {
+        return result;
+    }
+    float lambda = (b - sqrt(D))/2;
+    result.hit = lambda > 0;
+    float3 x = ray.origin + lambda * ray.direction;
+    result.normal = normalize(x-p);
+    return result;
 }
 
 [numthreads(8,8,1)]
@@ -19,5 +48,15 @@ void trace(uint3 id : SV_DispatchThreadID) {
     float3 left = normalize(cross(up, viewDirection));
     float3 cameraUp = normalize(cross(viewDirection, left));
     float3 pixelDirection = normalize(viewDirection + screenPosition.x * left + screenPosition.y * cameraUp);
-    light[index] += pixelDirection;
+    Ray ray;
+    ray.origin = position;
+    ray.direction = pixelDirection;
+    RayHit hit = cast(ray);
+    float3 newColor;
+    if (hit.hit) {
+        newColor = hit.normal;
+    } else {
+        newColor = float3(1, 1, 1);
+    }
+    light[index] += newColor;
 }
