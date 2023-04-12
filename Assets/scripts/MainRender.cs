@@ -9,13 +9,15 @@ public class MainRender : MonoBehaviour {
     public int samplesPerUpdate = 1;
     public int samples = 0;
     private int width = 400, height = 400;
-    private ComputeBuffer lightData, materialBuffer;
+    private ComputeBuffer lightData, materialBuffer, sphereBuffer;
     private bool invalidate = true;
     private bool ready = false;
     public int bounces = 5;
     public Vector3 sun;
     public float sunStrength;
-    public Material floorMaterial1, floorMaterial2, sphereMaterial;
+    public Material floorMaterial1, floorMaterial2;
+
+    public List<RenderSphere> spheres = new List<RenderSphere>();
 
     void Start() {
         doDisplay = display.FindKernel("display");
@@ -23,20 +25,36 @@ public class MainRender : MonoBehaviour {
         doReset = raytrace.FindKernel("reset");
         raytrace.SetVector("up", transform.up);
         transform.hasChanged = true;
-        materialBuffer = new ComputeBuffer(20*20, 20);
-        raytrace.SetBuffer(doRender, "materials", materialBuffer);
+        unsafe {
+            materialBuffer = new ComputeBuffer(sizeof(Material)*20, sizeof(Material));
+            raytrace.SetBuffer(doRender, "materials", materialBuffer);
+            sphereBuffer = new ComputeBuffer(sizeof(Sphere)*20, sizeof(Sphere));
+            raytrace.SetBuffer(doRender, "spheres", sphereBuffer);
+        }
     }
 
     private void OnValidate() {
         invalidate = true;
     }
 
-    private void updateMaterials() {
+    private List<Material> updateMaterials() {
         List<Material> materials = new List<Material>();
         materials.Add(floorMaterial1);
         materials.Add(floorMaterial2);
-        materials.Add(sphereMaterial);
+        foreach (RenderSphere sphere in spheres) {
+            sphere.addMaterials(materials);
+        }
         materialBuffer.SetData(materials);
+        return materials;
+    }
+
+    private void updateObjects(List<Material> materials) {
+        List<Sphere> sphereData = new List<Sphere>();
+        foreach (RenderSphere sphere in spheres) {
+            sphereData.Add(sphere.prepare(materials));
+        }
+        sphereBuffer.SetData(sphereData);
+        raytrace.SetInt("sphereCount", sphereData.Count);
     }
 
     void Update() {
@@ -52,7 +70,8 @@ public class MainRender : MonoBehaviour {
             raytrace.SetInt("bounces", bounces);
             raytrace.SetFloat("sunStrength", sunStrength);
             raytrace.SetVector("sunDirection", sun.normalized);
-            updateMaterials();
+            List<Material> materials = updateMaterials();
+            updateObjects(materials);
             display.SetInt("width", width);
 
             if (lightData != null) {
@@ -99,5 +118,9 @@ public class MainRender : MonoBehaviour {
         display.SetFloat("scale", 1f / samples);
         display.Dispatch(doDisplay, width / 8, height / 8, 1);
         Graphics.Blit(renderTexture, destination); 
+    }
+
+    public void doInvalidate() {
+        invalidate = true;
     }
 }

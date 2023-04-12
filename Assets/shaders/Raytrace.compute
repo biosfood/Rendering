@@ -28,6 +28,15 @@ struct RayHit {
     Material material;
 };
 
+struct Sphere {
+    float3 position;
+    float radius;
+    int material;
+};
+
+RWStructuredBuffer<Sphere> spheres;
+int sphereCount;
+
 uint Hash(inout uint s) {
     s ^= 2747636419u;
     s *= 2654435769u;
@@ -63,14 +72,12 @@ void reset(uint3 id : SV_DispatchThreadID) {
     light[index] = float3(0, 0, 0);
 }
 
-RayHit testSphere(Ray ray) {
+RayHit testSphere(Ray ray, Sphere sphere) {
     RayHit result;
     result.hit = false;
-    float3 p = float3(0, 1, 0);
-    float3 ap = p-ray.origin;
-    float r = 2;
+    float3 ap = sphere.position-ray.origin;
     float b =  2 * dot(ap, ray.direction);
-    float c = dot(ap,ap)-r*r;
+    float c = dot(ap,ap)-sphere.radius * sphere.radius;
     float D = b*b - 4*c;
     if (D < 0) {
         return result;
@@ -78,10 +85,10 @@ RayHit testSphere(Ray ray) {
     float lambda = (b - sqrt(D))/2;
     result.hit = lambda > 0;
     float3 x = ray.origin + lambda * ray.direction;
-    result.normal = normalize(x-p);
+    result.normal = normalize(x-sphere.position);
     result.position = x;
     result.distance = lambda;
-    result.material = materials[2];
+    result.material = materials[sphere.material];
     return result;
 }
 
@@ -121,7 +128,9 @@ RayHit cast(Ray ray) {
     hit.material = defaultMaterial;
     hit.position = up;
     hit.normal = up;
-    test(hit, testSphere(ray));
+    for (int i = 0; i < sphereCount; i++) {
+        test(hit, testSphere(ray, spheres[i]));
+    }
     test(hit, testFloor(ray));
     return hit;
 }
