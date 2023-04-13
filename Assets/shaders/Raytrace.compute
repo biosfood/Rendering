@@ -38,6 +38,14 @@ struct Sphere {
 RWStructuredBuffer<Sphere> spheres;
 int sphereCount;
 
+struct Box {
+    float3 a, b;
+    int material;
+};
+
+RWStructuredBuffer<Box> boxes;
+int boxCount;
+
 uint Hash(inout uint s) {
     s ^= 2747636419u;
     s *= 2654435769u;
@@ -93,6 +101,47 @@ RayHit testSphere(Ray ray, Sphere sphere) {
     return result;
 }
 
+
+RayHit testBox(Ray ray, Box box) {
+    RayHit result;
+
+    float aDistance = (box.a.x - ray.origin.x)/ray.direction.x;
+    float bDistance = (box.b.x - ray.origin.x)/ray.direction.x;
+
+    float xMin = min(aDistance, bDistance);
+    float xMax = max(aDistance, bDistance);
+
+    aDistance = (box.a.y - ray.origin.y)/ray.direction.y;
+    bDistance = (box.b.y - ray.origin.y)/ray.direction.y;
+
+    float yMin = min(aDistance, bDistance);
+    float yMax = max(aDistance, bDistance);
+
+    aDistance = (box.a.z - ray.origin.z)/ray.direction.z;
+    bDistance = (box.b.z - ray.origin.z)/ray.direction.z;
+
+    float zMin = min(aDistance, bDistance);
+    float zMax = max(aDistance, bDistance);
+
+    float maxDistance = min(xMax, min(yMax, zMax));
+    float minDistance = max(xMin, max(yMin, zMin));
+
+    result.hit = maxDistance >= minDistance && minDistance > 0;
+    result.distance = minDistance;
+    result.position = ray.origin + result.distance * ray.direction;
+    if (minDistance == xMin) {
+        result.normal = float3(-sign(ray.direction.x), 0, 0);
+    }
+    if (minDistance == yMin) {
+        result.normal = float3(0, -sign(ray.direction.y), 0);
+    }
+    if (minDistance == zMin) {
+        result.normal = float3(0, 0, -sign(ray.direction.z));
+    }
+    result.material = materials[box.material];
+    return result;
+}
+
 RayHit testFloor(Ray ray) {
     RayHit result;
     result.hit = ray.direction.y < 0;
@@ -131,6 +180,9 @@ RayHit cast(Ray ray, inout uint seed) {
     hit.normal = up;
     for (int i = 0; i < sphereCount; i++) {
         test(hit, testSphere(ray, spheres[i]));
+    }
+    for (int i = 0; i < boxCount; i++) {
+        test(hit, testBox(ray, boxes[i]));
     }
     test(hit, testFloor(ray));
     while (hit.material.next != 0) {

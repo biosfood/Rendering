@@ -8,37 +8,14 @@ public struct Sphere {
     public int material;
 }
 
-public class RenderSphere : MonoBehaviour {
-    public Material[] materialStack;
+public class RenderSphere : RenderObject<Sphere> {
     public float radius;
-    public MainRender render;
 
-    void Start() {
-        render = Camera.main.gameObject.GetComponent<MainRender>();
+    override public void register() {
         render.spheres.Add(this);
     }
 
-    void Update() {
-        if (transform.hasChanged) {
-            render.doInvalidate();
-            transform.hasChanged = false;
-        }
-    }
-
-    private void OnValidate() {
-        if (render != null) {
-            render.doInvalidate();
-        }
-    }
-
-    public void addMaterials(List<Material> materials) {
-        for (int i = 0; i < materialStack.Length - 1; i++) {
-            materialStack[i].next = materials.Count + i + 1;
-        }
-        materials.AddRange(materialStack);
-    }
-
-    public Sphere prepare(List<Material> materials) {
+    override public Sphere prepare(List<Material> materials) {
         Sphere result = new Sphere();
         result.position = transform.position;
         result.radius = radius;

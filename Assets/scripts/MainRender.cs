@@ -9,7 +9,7 @@ public class MainRender : MonoBehaviour {
     public int samplesPerUpdate = 1;
     public int samples = 0;
     private int width = 400, height = 400;
-    private ComputeBuffer lightData, materialBuffer, sphereBuffer;
+    private ComputeBuffer lightData, materialBuffer, sphereBuffer, boxBuffer;
     private bool invalidate = true;
     private bool ready = false;
     public int bounces = 5;
@@ -17,7 +17,8 @@ public class MainRender : MonoBehaviour {
     public float sunStrength;
     public Material floorMaterial1, floorMaterial2;
 
-    public List<RenderSphere> spheres = new List<RenderSphere>();
+    public List<RenderObject<Sphere>> spheres = new List<RenderObject<Sphere>>();
+    public List<RenderObject<Box>> boxes = new List<RenderObject<Box>>();
 
     void Start() {
         doDisplay = display.FindKernel("display");
@@ -30,6 +31,8 @@ public class MainRender : MonoBehaviour {
             raytrace.SetBuffer(doRender, "materials", materialBuffer);
             sphereBuffer = new ComputeBuffer(sizeof(Sphere)*20, sizeof(Sphere));
             raytrace.SetBuffer(doRender, "spheres", sphereBuffer);
+            boxBuffer = new ComputeBuffer(sizeof(Box)*20, sizeof(Box));
+            raytrace.SetBuffer(doRender, "boxes", boxBuffer);
         }
     }
 
@@ -44,17 +47,25 @@ public class MainRender : MonoBehaviour {
         foreach (RenderSphere sphere in spheres) {
             sphere.addMaterials(materials);
         }
+        foreach (RenderObject<Box> box in boxes) {
+            box.addMaterials(materials);
+        }
         materialBuffer.SetData(materials);
         return materials;
     }
 
-    private void updateObjects(List<Material> materials) {
-        List<Sphere> sphereData = new List<Sphere>();
-        foreach (RenderSphere sphere in spheres) {
-            sphereData.Add(sphere.prepare(materials));
+    private void updateType<T>(List<Material> materials, List<RenderObject<T>> renderObjects, ComputeBuffer buffer, string countName) where T: struct {
+        List<T> data = new List<T>();
+        foreach (RenderObject<T> obj in renderObjects) {
+            data.Add(obj.prepare(materials));
         }
-        sphereBuffer.SetData(sphereData);
-        raytrace.SetInt("sphereCount", sphereData.Count);
+        buffer.SetData(data);
+        raytrace.SetInt(countName, data.Count);
+    }
+
+    private void updateObjects(List<Material> materials) {
+        updateType<Sphere>(materials, spheres, sphereBuffer, "sphereCount");
+        updateType<Box>(materials, boxes, boxBuffer, "boxCount");
     }
 
     void Update() {
