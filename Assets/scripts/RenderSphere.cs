@@ -9,7 +9,7 @@ public struct Sphere {
 }
 
 public class RenderSphere : MonoBehaviour {
-    public Material material;
+    public Material[] materialStack;
     public float radius;
     public MainRender render;
 
@@ -32,14 +32,17 @@ public class RenderSphere : MonoBehaviour {
     }
 
     public void addMaterials(List<Material> materials) {
-        materials.Add(material);
+        for (int i = 0; i < materialStack.Length - 1; i++) {
+            materialStack[i].next = materials.Count + i + 1;
+        }
+        materials.AddRange(materialStack);
     }
 
     public Sphere prepare(List<Material> materials) {
         Sphere result = new Sphere();
         result.position = transform.position;
         result.radius = radius;
-        result.material = materials.IndexOf(material);
+        result.material = materials.IndexOf(materialStack[0]);
         return result;
     }
 }

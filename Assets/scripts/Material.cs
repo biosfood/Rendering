@@ -6,4 +6,6 @@ using UnityEngine;
 public struct Material {
     public Color color;
     public float specular;
+    public float passProbability;
+    public int next;
 }

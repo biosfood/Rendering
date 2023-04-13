@@ -16,7 +16,8 @@ struct Ray {
 
 struct Material {
     float4 color;
-    float specular;
+    float specular, passProbability;
+    int next;
 };
 
 RWStructuredBuffer<Material> materials;
@@ -119,7 +120,7 @@ void test(inout RayHit hit, RayHit test)  {
     }
 }
 
-RayHit cast(Ray ray) {
+RayHit cast(Ray ray, inout uint seed) {
     Material defaultMaterial;
     defaultMaterial.color = float4(0,0,0,0);
     RayHit hit;
@@ -132,8 +133,15 @@ RayHit cast(Ray ray) {
         test(hit, testSphere(ray, spheres[i]));
     }
     test(hit, testFloor(ray));
+    while (hit.material.next != 0) {
+        if (hit.material.passProbability > random(seed)) {
+            break;
+        }
+        hit.material = materials[hit.material.next];
+    }
     return hit;
 }
+
 
 float3 environmentLight(float3 direction) {
     float3 gradient = lerp(float3(.7,.7,1), float3(0,0,1), dot(direction, up));
@@ -144,7 +152,7 @@ float3 environmentLight(float3 direction) {
 float3 findColor(Ray ray, inout uint seed) {
     float3 lightAmount = float3(1,1,1);
     for (int i = 0; i <= bounces; i++) {
-        RayHit hit = cast(ray);
+        RayHit hit = cast(ray, seed);
         if (!hit.hit) {
             lightAmount *= environmentLight(ray.direction);
             return lightAmount.rgb;

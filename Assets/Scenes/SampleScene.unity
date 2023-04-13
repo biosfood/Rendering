@@ -332,9 +332,13 @@ MonoBehaviour:
   floorMaterial1:
     color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 0}
     specular: 0
+    passProbability: 0
+    next: 0
   floorMaterial2:
     color: {r: 0.6603774, g: 0.4383424, b: 0.12148453, a: 0}
     specular: 0.5
+    passProbability: 0
+    next: 0
   spheres: []
 --- !u!1 &1125892850
 GameObject:
@@ -432,9 +436,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61dd95e22890c814bb8975096c2504b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material:
-    color: {r: 0.54901963, g: 0.5254902, b: 0.5254902, a: 0}
-    specular: 0.9
+  materialStack:
+  - color: {r: 1, g: 1, b: 1, a: 0}
+    specular: 1
+    passProbability: 0.5
+    next: 0
+  - color: {r: 1, g: 0, b: 0, a: 0}
+    specular: 0
+    passProbability: 0
+    next: 0
   radius: 1
   render: {fileID: 0}
 --- !u!1 &1329721679
@@ -468,9 +478,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61dd95e22890c814bb8975096c2504b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material:
-    color: {r: 0.3537736, g: 0.49389502, b: 1, a: 0}
-    specular: 0.1
+  materialStack:
+  - color: {r: 1, g: 0.0141509175, b: 0.0141509175, a: 0}
+    specular: 0
+    passProbability: 0
+    next: 0
   radius: 2
   render: {fileID: 0}
 --- !u!23 &1329721681
