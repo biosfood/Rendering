@@ -4,8 +4,13 @@ using UnityEngine;
 
 [System.Serializable]
 public struct Material {
-    public Color color;
+    public Color diffuseColor;
+    [Range(0f, 1f)]
     public float specular;
+    public Color specularColor;
+    [Range(0f, 1f)]
+    public float metal;
+    [Range(0f, 1f)]
     public float passProbability;
     public int next;
 }

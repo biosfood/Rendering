@@ -17,7 +17,6 @@ public class RenderBox : RenderObject<Box> {
         result.min = transform.position - transform.localScale * 0.5f;
         result.max = transform.position + transform.localScale * 0.5f;
         result.material = materials.IndexOf(materialStack[0]);
-        print(result.material);
         return result;
     }
 }

@@ -16,7 +16,10 @@ struct Ray {
 
 struct Material {
     float4 color;
-    float specular, passProbability;
+    float specular;
+    float4 specularColor;
+    float metal;
+    float passProbability;
     int next;
 };
 
@@ -186,7 +189,7 @@ RayHit cast(Ray ray, inout uint seed) {
     }
     test(hit, testFloor(ray));
     while (hit.material.next != 0) {
-        if (hit.material.passProbability > random(seed)) {
+        if (hit.material.passProbability < random(seed)) {
             break;
         }
         hit.material = materials[hit.material.next];
@@ -212,8 +215,10 @@ float3 findColor(Ray ray, inout uint seed) {
         ray.origin = hit.position;
         float3 specularDirection = reflect(ray.direction, hit.normal);
         float3 diffuseDirection = normalize(hit.normal + randomDirection(seed));
-        ray.direction = lerp(diffuseDirection, specularDirection, hit.material.specular);;
-        lightAmount *= hit.material.color.rgb;
+        float frensel = hit.material.specular + (1-hit.material.specular) * pow(1+dot(ray.direction, hit.normal), 5);
+        float3 specularColor = lerp(hit.material.specularColor.rgb, hit.material.color.rgb, hit.material.metal);
+        ray.direction = lerp(diffuseDirection, specularDirection, frensel);
+        lightAmount *= lerp(hit.material.color.rgb, specularColor, frensel);
     }
     return float3(0,0,0);
 }

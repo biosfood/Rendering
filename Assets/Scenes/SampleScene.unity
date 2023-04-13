@@ -645,4 +645,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b03ea80ee9cd61d45bdf0e802ba4ad9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialStack: []
+  materialStack:
+  - color: {r: 0.4811321, g: 0.4811321, b: 0.4811321, a: 0}
+    specular: 0
+    passProbability: 0
+    next: 0
