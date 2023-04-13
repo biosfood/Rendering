@@ -336,7 +336,7 @@ MonoBehaviour:
     next: 0
   floorMaterial2:
     color: {r: 0.6603774, g: 0.4383424, b: 0.12148453, a: 0}
-    specular: 0.5
+    specular: 1
     passProbability: 0
     next: 0
   spheres: []
@@ -439,7 +439,7 @@ MonoBehaviour:
   materialStack:
   - color: {r: 1, g: 1, b: 1, a: 0}
     specular: 1
-    passProbability: 0.5
+    passProbability: 0.05
     next: 0
   - color: {r: 1, g: 0, b: 0, a: 0}
     specular: 0

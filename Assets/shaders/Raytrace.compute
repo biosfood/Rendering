@@ -172,7 +172,9 @@ int startSeed;
 void trace(uint3 id : SV_DispatchThreadID) {
     int index = id.x + id.y * width;
     uint seed = index + startSeed;
-    float2 screenPosition = (id.xy / float2(width, height) * 2 - float2(1, 1)) * float2(float(width)/float(height), 1);
+    float2 antiAliasingOffset = float2(random(seed), random(seed)) - 0.5;
+    float2 pixel = float2(id.xy) + antiAliasingOffset;
+    float2 screenPosition = (pixel / float2(width, height) * 2 - float2(1, 1)) * float2(float(width)/float(height), 1);
     float3 left = normalize(cross(up, viewDirection));
     float3 cameraUp = normalize(cross(viewDirection, left));
     float3 pixelDirection = normalize(viewDirection + screenPosition.x * left + screenPosition.y * cameraUp);
