@@ -200,9 +200,25 @@ RayHit cast(Ray ray, inout uint seed) {
 }
 
 float3 environmentLight(float3 direction) {
-    float3 gradient = lerp(float3(.7,.7,1), float3(0,0,1), dot(direction, up));
-    float3 sun = float3(1,1,1) * pow(max(0, dot(direction, sunDirection)-0.99)*100, 20)* sunStrength;
+    float3 gradient = lerp(float3(.5,.5,.8), float3(0,0,.8), dot(direction, up));
+    // sun radius: 5deg
+    float sunHit = pow(max(0, dot(direction, sunDirection) - 0.9961946981) * 262.79, 2);
+    float3 sun = float3(1,1,1) * sunHit * sunStrength;
     return gradient + sun;
+}
+
+
+float3 getSunIntensity(inout uint seed, float3 position) {
+    Ray ray;
+    float phi = 2*PI*random(seed);
+    // here: no radius adjustment using sqrt to make the sun brighter in the center (similar to the pow in environmentLight)
+    float r = random(seed) * 0.087488; // tan(5deg)
+    float3 sunx = normalize(cross(up, sunDirection));
+    float3 suny = normalize(cross(sunDirection, sunx));
+    ray.origin = position;
+    ray.direction = normalize(sunDirection + sin(phi) * r * sunx + cos(phi) * r * suny);
+    RayHit hit = cast(ray, seed);
+    return float3(2,2,2) * (1-hit.hit);
 }
 
 float3 findColor(Ray ray, inout uint seed) {
@@ -220,15 +236,15 @@ float3 findColor(Ray ray, inout uint seed) {
         float3 specularColor = lerp(hit.material.specularColor.rgb, hit.material.color.rgb, hit.material.metal);
         bool type = frensel < random(seed);
 
-        ray.origin = hit.position;
-        ray.direction = type ? diffuseDirection : lerp(diffuseDirection, specularDirection, frensel);
-
         light += rayColor * hit.material.emissionColor * hit.material.emissionStrength;
         rayColor *= type ? hit.material.color.rgb : specularColor;
+        light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
+
+        ray.origin = hit.position;
+        ray.direction = type ? diffuseDirection : lerp(diffuseDirection, specularDirection, frensel);
     }
     return light;
 }
-
 
 int startSeed, iterationCount;
 

@@ -433,7 +433,7 @@ MonoBehaviour:
   samples: 0
   bounces: 3
   sun: {x: 1, y: 3, z: 1}
-  sunStrength: 500
+  sunStrength: 10
   floorMaterial1:
     diffuseColor: {r: 0.18867922, g: 0.18867922, b: 0.18867922, a: 0}
     specular: 0
@@ -557,7 +557,7 @@ MonoBehaviour:
     metal: 0
     emissionColor: {r: 0, g: 0, b: 0, a: 0}
     emissionStrength: 0
-    passProbability: 0.95
+    passProbability: 0.9
     next: 0
   - diffuseColor: {r: 0, g: 0.16233253, b: 1, a: 0}
     specular: 0
