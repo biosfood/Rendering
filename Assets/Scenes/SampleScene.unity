@@ -303,7 +303,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 2, y: 2, z: -7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -328,12 +328,14 @@ MonoBehaviour:
   samples: 0
   bounces: 5
   sun: {x: 1, y: 3, z: 1}
-  sunStrength: 10
+  sunStrength: 500
   floorMaterial1:
     diffuseColor: {r: 0.18867922, g: 0.18867922, b: 0.18867922, a: 0}
     specular: 0
     specularColor: {r: 1, g: 1, b: 1, a: 0}
-    metal: 1
+    metal: 0.59
+    emissionColor: {r: 0, g: 0, b: 0, a: 0}
+    emissionStrength: 0
     passProbability: 0
     next: 0
   floorMaterial2:
@@ -341,6 +343,8 @@ MonoBehaviour:
     specular: 0.9
     specularColor: {r: 1, g: 1, b: 1, a: 0}
     metal: 1
+    emissionColor: {r: 0, g: 0, b: 0, a: 0}
+    emissionStrength: 0
     passProbability: 0
     next: 0
   spheres: []
@@ -446,12 +450,16 @@ MonoBehaviour:
     specular: 1
     specularColor: {r: 1, g: 1, b: 1, a: 0}
     metal: 0
+    emissionColor: {r: 0, g: 0, b: 0, a: 0}
+    emissionStrength: 0
     passProbability: 0.95
     next: 0
   - diffuseColor: {r: 1, g: 0.019191377, b: 0, a: 0}
     specular: 0
     specularColor: {r: 1, g: 0, b: 0, a: 0}
     metal: 0
+    emissionColor: {r: 0, g: 0, b: 0, a: 0}
+    emissionStrength: 0
     passProbability: 0
     next: 0
   radius: 1
@@ -491,6 +499,8 @@ MonoBehaviour:
     specular: 0.2
     specularColor: {r: 1, g: 1, b: 1, a: 0}
     metal: 0
+    emissionColor: {r: 0, g: 0, b: 0, a: 0}
+    emissionStrength: 0
     passProbability: 0
     next: 0
   radius: 2
@@ -552,7 +562,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1329721679}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6, y: 2, z: 0}
+  m_LocalPosition: {x: 5.06, y: 2, z: 0}
   m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -636,7 +646,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1527151488}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.85, y: 0.5438452, z: 3.272478}
+  m_LocalPosition: {x: 1.7, y: 0.43, z: 0.53}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -660,5 +670,7 @@ MonoBehaviour:
     specular: 0
     specularColor: {r: 0, g: 0, b: 0, a: 0}
     metal: 0
+    emissionColor: {r: 1, g: 0, b: 0, a: 0}
+    emissionStrength: 7.01
     passProbability: 0
     next: 0

@@ -10,6 +10,8 @@ public struct Material {
     public Color specularColor;
     [Range(0f, 1f)]
     public float metal;
+    public Color emissionColor;
+    public float emissionStrength;
     [Range(0f, 1f)]
     public float passProbability;
     public int next;
