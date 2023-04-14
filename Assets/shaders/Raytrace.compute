@@ -200,7 +200,7 @@ RayHit cast(Ray ray, inout uint seed) {
 
 float3 environmentLight(float3 direction) {
     float3 gradient = lerp(float3(.7,.7,1), float3(0,0,1), dot(direction, up));
-    float3 sun = float3(1,1,1) * pow(max(0, dot(direction, sunDirection)), 20) * sunStrength;
+    float3 sun = float3(1,1,1) * pow(max(0, dot(direction, sunDirection)-0.99)*100, 20)* sunStrength;
     return gradient + sun;
 }
 
@@ -214,18 +214,20 @@ float3 findColor(Ray ray, inout uint seed) {
         }
         ray.origin = hit.position;
         float3 specularDirection = reflect(ray.direction, hit.normal);
-        float3 diffuseDirection = normalize(hit.normal + randomDirection(seed));
+        float3 diffuseDirection = normalize(hit.normal+ randomDirection(seed));
         float frensel = hit.material.specular + (1-hit.material.specular) * pow(1+dot(ray.direction, hit.normal), 5);
         float3 specularColor = lerp(hit.material.specularColor.rgb, hit.material.color.rgb, hit.material.metal);
-        ray.direction = lerp(diffuseDirection, specularDirection, frensel);
-        lightAmount *= lerp(hit.material.color.rgb, specularColor, frensel);
+        bool type = frensel < random(seed);
+        ray.direction = type ? diffuseDirection : lerp(diffuseDirection, specularDirection, frensel);
+        lightAmount *= type ? hit.material.color.rgb : specularColor;
     }
     return float3(0,0,0);
 }
 
+
 int startSeed;
 
-[numthreads(8,8,1)]
+[numthreads(32,32,1)]
 void trace(uint3 id : SV_DispatchThreadID) {
     int index = id.x + id.y * width;
     uint seed = index + startSeed;
