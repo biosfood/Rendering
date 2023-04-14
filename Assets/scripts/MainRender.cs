@@ -79,6 +79,7 @@ public class MainRender : MonoBehaviour {
             raytrace.SetInt("width", width);
             raytrace.SetInt("height", height);
             raytrace.SetInt("bounces", bounces);
+            raytrace.SetInt("iterationCount", samplesPerUpdate);
             raytrace.SetFloat("sunStrength", sunStrength);
             raytrace.SetVector("sunDirection", sun.normalized);
             List<Material> materials = updateMaterials();
@@ -108,10 +109,8 @@ public class MainRender : MonoBehaviour {
         }
         if (!ready) return;
         samples += samplesPerUpdate;
-        for (int i = 0; i < samplesPerUpdate; i++) {
-            raytrace.SetInt("startSeed", Random.Range(int.MinValue, int.MaxValue));
-            raytrace.Dispatch(doRender, width/32, height/32, 1);
-        }
+        raytrace.SetInt("startSeed", Random.Range(int.MinValue, int.MaxValue));
+        raytrace.Dispatch(doRender, width/16 + 1, height/16 + 1, 1);
     }
 
     private void OnRenderImage(RenderTexture before, RenderTexture destination) {
