@@ -85,6 +85,7 @@ public class MainRender : MonoBehaviour {
             List<Material> materials = updateMaterials();
             updateObjects(materials);
             display.SetInt("width", width);
+            display.SetInt("height", height);
 
             if (lightData != null) {
                 lightData.Release();
@@ -123,10 +124,11 @@ public class MainRender : MonoBehaviour {
             invalidate = true;
         }
         if (invalidate) {
+            Graphics.Blit(before, destination);
             return;
         }
         display.SetFloat("scale", 1f / samples);
-        display.Dispatch(doDisplay, width / 8, height / 8, 1);
+        display.Dispatch(doDisplay, width / 16 + 1, height / 16 + 1, 1);
         Graphics.Blit(renderTexture, destination); 
     }
 

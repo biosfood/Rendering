@@ -3,9 +3,12 @@
 RWTexture2D<float4> destination;
 RWStructuredBuffer<float3> light;
 float scale;
-int width;
+uint width, height;
 
-[numthreads(8,8,1)]
+[numthreads(16,16,1)]
 void display(uint3 id : SV_DispatchThreadID) {
+    if (id.x > width || id.y > height) {
+        return;
+    }
     destination[id.xy] = float4(light[id.x + id.y * width] * scale, 0);
 }
