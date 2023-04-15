@@ -2,7 +2,7 @@
 #pragma kernel reset
 
 RWStructuredBuffer<float3> light;
-int width, height,  bounces;
+uint width, height,  bounces;
 float3 position, viewDirection;
 float3 up, sunDirection;
 float sunStrength;
@@ -93,11 +93,8 @@ RayHit testSphere(Ray ray, Sphere sphere) {
     float b =  2 * dot(ap, ray.direction);
     float c = dot(ap,ap)-sphere.radius * sphere.radius;
     float D = b*b - 4*c;
-    if (D < 0) {
-        return result;
-    }
     float lambda = (b - sqrt(D))/2;
-    result.hit = lambda > 0;
+    result.hit = D > 0 && lambda > 0;
     float3 x = ray.origin + lambda * ray.direction;
     result.normal = normalize(x-sphere.position);
     result.position = x;
@@ -105,7 +102,6 @@ RayHit testSphere(Ray ray, Sphere sphere) {
     result.material = materials[sphere.material];
     return result;
 }
-
 
 RayHit testBox(Ray ray, Box box) {
     RayHit result;
@@ -186,7 +182,7 @@ RayHit cast(Ray ray, inout uint seed) {
     for (int i = 0; i < sphereCount; i++) {
         test(hit, testSphere(ray, spheres[i]));
     }
-    for (int i = 0; i < boxCount; i++) {
+    for (i = 0; i < boxCount; i++) {
         test(hit, testBox(ray, boxes[i]));
     }
     test(hit, testFloor(ray));
@@ -224,19 +220,19 @@ float3 getSunIntensity(inout uint seed, float3 position) {
 float3 findColor(Ray ray, inout uint seed) {
     float3 rayColor = float3(1,1,1);
     float3 light = float3(0,0,0);
-    for (int i = 0; i <= bounces; i++) {
+    for (uint i = 0; i <= bounces; i++) {
         RayHit hit = cast(ray, seed);
         if (!hit.hit) {
             light += rayColor * environmentLight(ray.direction);
             break;
         }
         float3 specularDirection = reflect(ray.direction, hit.normal);
-        float3 diffuseDirection = normalize(hit.normal+ randomDirection(seed));
+        float3 diffuseDirection = normalize(hit.normal + randomDirection(seed));
         float frensel = hit.material.specular + (1-hit.material.specular) * pow(1+dot(ray.direction, hit.normal), 5);
         float3 specularColor = lerp(hit.material.specularColor.rgb, hit.material.color.rgb, hit.material.metal);
         bool type = frensel < random(seed);
 
-        light += rayColor * hit.material.emissionColor * hit.material.emissionStrength;
+        light += rayColor * hit.material.emissionColor.rgb * hit.material.emissionStrength;
         rayColor *= type ? hit.material.color.rgb : specularColor;
         light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
 

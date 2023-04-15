@@ -24,7 +24,7 @@ public class MainRender : MonoBehaviour {
         doDisplay = display.FindKernel("display");
         doRender = raytrace.FindKernel("trace");
         doReset = raytrace.FindKernel("reset");
-        raytrace.SetVector("up", transform.up);
+        raytrace.SetVector("up", Vector3.up);
         transform.hasChanged = true;
         unsafe {
             materialBuffer = new ComputeBuffer(sizeof(Material)*20, sizeof(Material));
