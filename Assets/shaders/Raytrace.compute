@@ -21,6 +21,8 @@ struct Material {
     float metal;
     float4 emissionColor;
     float emissionStrength;
+    float4 tint;
+    float refractiveIndex, refractionProbability;
     float passProbability;
     int next;
 };
@@ -217,9 +219,22 @@ float3 getSunIntensity(inout uint seed, float3 position) {
     return float3(2,2,2) * (1-hit.hit);
 }
 
+float3 getRefractionDirection(float3 normal, float3 direction, float oldRefindex, float refIndex) {
+    float n = oldRefindex / refIndex;
+    float cosIncoming = -dot(normal, direction);
+    float sinRefracted2 = n*n * (1.0 - cosIncoming*cosIncoming);
+    if (sinRefracted2 > 1.0) {
+        return reflect(direction, normal);
+    }
+    float cosRefracted = sqrt(1.0-sinRefracted2);
+    return n * direction + (n*cosIncoming - cosRefracted) * normal;
+}
+
 float3 findColor(Ray ray, inout uint seed) {
     float3 rayColor = float3(1,1,1);
     float3 light = float3(0,0,0);
+    float refractiveIndex = 1;
+
     for (uint i = 0; i <= bounces; i++) {
         RayHit hit = cast(ray, seed);
         if (!hit.hit) {
@@ -233,11 +248,20 @@ float3 findColor(Ray ray, inout uint seed) {
         bool type = frensel < random(seed);
 
         light += rayColor * hit.material.emissionColor.rgb * hit.material.emissionStrength;
-        rayColor *= type ? hit.material.color.rgb : specularColor;
-        light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
 
+        if (random(seed) < hit.material.refractionProbability) {
+            // todo: add frensel-like check here as well
+            ray.direction = getRefractionDirection(hit.normal, ray.direction, refractiveIndex,  hit.material.refractiveIndex);
+            rayColor *= hit.material.tint.rgb;
+            refractiveIndex = hit.material.refractiveIndex;
+            hit.position -= 0.0001 * hit.normal;
+        } else {
+            rayColor *= type ? hit.material.color.rgb : specularColor;
+            light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
+            ray.direction = type ? diffuseDirection : normalize(lerp(diffuseDirection, specularDirection, frensel));
+        }
         ray.origin = hit.position;
-        ray.direction = type ? diffuseDirection : lerp(diffuseDirection, specularDirection, frensel);
+
     }
     return light;
 }

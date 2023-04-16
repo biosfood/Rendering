@@ -12,6 +12,11 @@ public struct Material {
     public float metal;
     public Color emissionColor;
     public float emissionStrength;
+    public Color tint;
+    [Range(1f, 2f)]
+    public float refractiveIndex;
+    [Range(0f, 1f)]
+    public float refractionProbability;
     [Range(0f, 1f)]
     public float passProbability;
     public int next;
