@@ -30,7 +30,7 @@ struct Material {
 RWStructuredBuffer<Material> materials;
 
 struct RayHit {
-    bool hit;
+    bool hit, fromInside;
     float3 position, normal;
     float distance;
     Material material;
@@ -95,7 +95,9 @@ RayHit testSphere(Ray ray, Sphere sphere) {
     float b =  2 * dot(ap, ray.direction);
     float c = dot(ap,ap)-sphere.radius * sphere.radius;
     float D = b*b - 4*c;
-    float lambda = (b - sqrt(D))/2;
+    float sqrtD = sqrt(D);
+    result.fromInside = c < 0;
+    float lambda = result.fromInside ? (b + sqrtD)/2 : (b-sqrtD)/2;
     result.hit = D > 0 && lambda > 0;
     float3 x = ray.origin + lambda * ray.direction;
     result.normal = normalize(x-sphere.position);
@@ -132,6 +134,8 @@ RayHit testBox(Ray ray, Box box) {
     result.hit = maxDistance >= minDistance && minDistance > 0;
     result.distance = minDistance;
     result.position = ray.origin + result.distance * ray.direction;
+    // TODO
+    result.fromInside = false;
     if (minDistance == xMin) {
         result.normal = float3(-sign(ray.direction.x), 0, 0);
     }
@@ -151,6 +155,7 @@ RayHit testFloor(Ray ray) {
     result.distance = -ray.origin.y / ray.direction.y;
     result.position = ray.origin + result.distance * ray.direction;
     result.normal = up;
+    result.fromInside = false;
     float xRemainder = abs(fmod(result.position.x, 2.0));
     float zRemainder = abs(fmod(result.position.z, 2.0));
     if (xRemainder < 0.05 || xRemainder > 1.95 || zRemainder < 0.05 || zRemainder > 1.95) {
@@ -164,11 +169,7 @@ RayHit testFloor(Ray ray) {
 
 void test(inout RayHit hit, RayHit test)  {
     if (test.hit && test.distance < hit.distance) {
-        hit.hit = true;
-        hit.position = test.position;
-        hit.distance = test.distance;
-        hit.material = test.material;
-        hit.normal = test.normal;
+        hit = test;
     }
 }
 
@@ -176,6 +177,7 @@ RayHit cast(Ray ray, inout uint seed) {
     Material defaultMaterial;
     defaultMaterial.color = float4(0,0,0,0);
     RayHit hit;
+    hit.fromInside = false;
     hit.distance = 10000.0;
     hit.hit = false;
     hit.material = defaultMaterial;
@@ -248,20 +250,24 @@ float3 findColor(Ray ray, inout uint seed) {
         bool type = frensel < random(seed);
 
         light += rayColor * hit.material.emissionColor.rgb * hit.material.emissionStrength;
-
-        if (random(seed) < hit.material.refractionProbability) {
+        if (hit.fromInside) {
+            // TODO: don't change refractive index on internal reflections
+            ray.direction = getRefractionDirection(-hit.normal, ray.direction, refractiveIndex, 1.0);
+            rayColor *= pow(hit.material.tint.rgb, hit.distance);
+            refractiveIndex = 1.0;
+            hit.position += 0.0001 * hit.normal;
+        } else if (random(seed) < hit.material.refractionProbability) {
             // todo: add frensel-like check here as well
             ray.direction = getRefractionDirection(hit.normal, ray.direction, refractiveIndex,  hit.material.refractiveIndex);
-            rayColor *= hit.material.tint.rgb;
             refractiveIndex = hit.material.refractiveIndex;
             hit.position -= 0.0001 * hit.normal;
         } else {
             rayColor *= type ? hit.material.color.rgb : specularColor;
             light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
             ray.direction = type ? diffuseDirection : normalize(lerp(diffuseDirection, specularDirection, frensel));
+            hit.position += 0.0001 * hit.normal;
         }
         ray.origin = hit.position;
-
     }
     return light;
 }
