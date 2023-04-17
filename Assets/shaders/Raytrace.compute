@@ -276,7 +276,7 @@ int startSeed, iterationCount;
 
 [numthreads(16,16,1)]
 void trace(uint3 id : SV_DispatchThreadID) {
-    if (id.x > width || id.y > height) {
+    if (id.x >= width || id.y >= height) {
         return;
     }
     int index = id.x + id.y * width;

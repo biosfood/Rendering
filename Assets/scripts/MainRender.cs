@@ -94,7 +94,7 @@ public class MainRender : MonoBehaviour {
             display.SetBuffer(doDisplay, "light", lightData);
             raytrace.SetBuffer(doRender, "light", lightData);
             raytrace.SetBuffer(doReset, "light", lightData);
-            raytrace.Dispatch(doReset, width/8, height/8, 1);
+            raytrace.Dispatch(doReset, width/8+1, height/8+1, 1);
 
             if (renderTexture != null) {
                 renderTexture.Release();
