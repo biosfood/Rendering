@@ -232,6 +232,10 @@ float3 getRefractionDirection(float3 normal, float3 direction, float oldRefindex
     return n * direction + (n*cosIncoming - cosRefracted) * normal;
 }
 
+float frensel(float strength, float cosine) {
+    return strength + (1-strength) * pow(1+cosine, 5);
+}
+
 float3 findColor(Ray ray, inout uint seed) {
     float3 rayColor = float3(1,1,1);
     float3 light = float3(0,0,0);
@@ -245,26 +249,44 @@ float3 findColor(Ray ray, inout uint seed) {
         }
         float3 specularDirection = reflect(ray.direction, hit.normal);
         float3 diffuseDirection = normalize(hit.normal + randomDirection(seed));
-        float frensel = hit.material.specular + (1-hit.material.specular) * pow(1+dot(ray.direction, hit.normal), 5);
+        float specular = frensel(hit.material.specular, dot(ray.direction, hit.normal));
         float3 specularColor = lerp(hit.material.specularColor.rgb, hit.material.color.rgb, hit.material.metal);
-        bool type = frensel < random(seed);
+        bool type = specular < random(seed);
 
         light += rayColor * hit.material.emissionColor.rgb * hit.material.emissionStrength;
         if (hit.fromInside) {
-            // TODO: don't change refractive index on internal reflections
-            ray.direction = getRefractionDirection(-hit.normal, ray.direction, refractiveIndex, 1.0);
-            rayColor *= pow(hit.material.tint.rgb, hit.distance);
-            refractiveIndex = 1.0;
-            hit.position += 0.0001 * hit.normal;
+            float doReflection = frensel(1-hit.material.refractionProbability, -dot(ray.direction, hit.normal));
+            float n = refractiveIndex / hit.material.refractiveIndex;
+            float cosIncoming = -dot(hit.normal, ray.direction);
+            doReflection = max(doReflection, n*n * (1.0 - cosIncoming*cosIncoming));
+
+            if (doReflection > random(seed)) {
+                ray.direction = specularDirection;
+                hit.position -= 0.0001 * hit.normal;
+            } else {
+                ray.direction = getRefractionDirection(-hit.normal, ray.direction, refractiveIndex, 1.0);
+                rayColor *= pow(hit.material.tint.rgb, hit.distance);
+                refractiveIndex = 1.0;
+                hit.position += 0.0001 * hit.normal;
+            }
         } else if (random(seed) < hit.material.refractionProbability) {
-            // todo: add frensel-like check here as well
-            ray.direction = getRefractionDirection(hit.normal, ray.direction, refractiveIndex,  hit.material.refractiveIndex);
-            refractiveIndex = hit.material.refractiveIndex;
-            hit.position -= 0.0001 * hit.normal;
+            float doReflection = frensel(1-hit.material.refractionProbability, dot(ray.direction, hit.normal));
+            float n = refractiveIndex / hit.material.refractiveIndex;
+            float cosIncoming = -dot(hit.normal, ray.direction);
+            doReflection = max(doReflection, n*n * (1.0 - cosIncoming*cosIncoming));
+
+            if (doReflection > random(seed)) {
+                ray.direction = specularDirection;
+                hit.position += 0.0001 * hit.normal;
+            } else {
+                ray.direction = getRefractionDirection(hit.normal, ray.direction, refractiveIndex,  hit.material.refractiveIndex);
+                refractiveIndex = hit.material.refractiveIndex;
+                hit.position -= 0.0001 * hit.normal;
+            }
         } else {
             rayColor *= type ? hit.material.color.rgb : specularColor;
             light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
-            ray.direction = type ? diffuseDirection : normalize(lerp(diffuseDirection, specularDirection, frensel));
+            ray.direction = type ? diffuseDirection : normalize(lerp(diffuseDirection, specularDirection, specular));
             hit.position += 0.0001 * hit.normal;
         }
         ray.origin = hit.position;
