@@ -131,11 +131,16 @@ RayHit testBox(Ray ray, Box box) {
     float maxDistance = min(xMax, min(yMax, zMax));
     float minDistance = max(xMin, max(yMin, zMin));
 
-    result.hit = maxDistance >= minDistance && minDistance > 0;
+    result.fromInside = box.a.x <= ray.origin.x && box.b.x >= ray.origin.x &&
+                        box.a.y <= ray.origin.y && box.b.y >= ray.origin.y &&
+                        box.a.z <= ray.origin.z && box.b.z >= ray.origin.z;
+    result.hit = maxDistance >= minDistance && minDistance > 0  ||  result.fromInside;
+    minDistance = result.fromInside ? maxDistance : minDistance;
     result.distance = minDistance;
     result.position = ray.origin + result.distance * ray.direction;
-    // TODO
-    result.fromInside = false;
+    xMin = result.fromInside ? xMax : xMin;
+    yMin = result.fromInside ? yMax : yMin;
+    zMin = result.fromInside ? zMax : zMin;
     if (minDistance == xMin) {
         result.normal = float3(-sign(ray.direction.x), 0, 0);
     }
@@ -145,6 +150,7 @@ RayHit testBox(Ray ray, Box box) {
     if (minDistance == zMin) {
         result.normal = float3(0, 0, -sign(ray.direction.z));
     }
+    result.normal *= result.fromInside ? -1 : 1;
     result.material = materials[box.material];
     return result;
 }
@@ -258,16 +264,16 @@ float3 findColor(Ray ray, inout uint seed) {
 
         float otherRefractiveIndex = hit.fromInside ? 1 : hit.material.refractiveIndex;
         float n = refractiveIndex / otherRefractiveIndex;
-        float doReflection = max(frensel(1-hit.material.refractionProbability, cosIncoming), pow(n*n * (1.0 - cosIncoming*cosIncoming), 2));
+        float doReflection = max(frensel(1-hit.material.refractionProbability, cosIncoming * (hit.fromInside ? -1 : 1)), pow(n*n * (1.0 - cosIncoming*cosIncoming), 2));
         if (random(seed) < hit.material.refractionProbability && doReflection < random(seed)) {
-            ray.direction = getRefractionDirection(hit.normal, ray.direction, refractiveIndex,  hit.material.refractiveIndex);
+            ray.direction = getRefractionDirection(hit.normal * (hit.fromInside ? -1 : 1), ray.direction, refractiveIndex,  hit.material.refractiveIndex);
             refractiveIndex = hit.material.refractiveIndex;
-            hit.position += 0.0001 * hit.normal * hit.fromInside ? 1 : -1;
+            hit.position += 0.0001 * hit.normal * (hit.fromInside ? 1 : -1);
         } else {
             rayColor *= type ? hit.material.color.rgb : specularColor;
             light += type * rayColor * getSunIntensity(seed, hit.position + 0.0001 * hit.normal) * dot(hit.normal, -ray.direction) * dot(hit.normal, sunDirection);
             ray.direction = type ? diffuseDirection : normalize(lerp(diffuseDirection, specularDirection, specular));
-            hit.position += 0.0001 * hit.normal;
+            hit.position += 0.0001 * hit.normal * (hit.fromInside ? -1 : 1);
         }
         ray.origin = hit.position;
     }
