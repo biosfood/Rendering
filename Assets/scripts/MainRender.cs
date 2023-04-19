@@ -82,6 +82,8 @@ public class MainRender : MonoBehaviour {
             raytrace.SetInt("iterationCount", samplesPerUpdate);
             raytrace.SetFloat("sunStrength", sunStrength);
             raytrace.SetVector("sunDirection", sun.normalized);
+            raytrace.SetVector("cameraUp", transform.up);
+            raytrace.SetVector("cameraRight", transform.right);
             List<Material> materials = updateMaterials();
             updateObjects(materials);
             display.SetInt("width", width);
