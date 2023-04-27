@@ -26,12 +26,15 @@ public class MainRender : MonoBehaviour {
         doReset = raytrace.FindKernel("reset");
         raytrace.SetVector("up", Vector3.up);
         transform.hasChanged = true;
+        int materialCount = 2;
+        foreach (RenderSphere sphere in spheres) { materialCount += sphere.materialStack.Length; }
+        foreach (RenderBox box in boxes)         { materialCount += box.materialStack.Length; }
         unsafe {
-            materialBuffer = new ComputeBuffer(sizeof(Material)*20, sizeof(Material));
+            materialBuffer = new ComputeBuffer(sizeof(Material)*materialCount, sizeof(Material));
             raytrace.SetBuffer(doRender, "materials", materialBuffer);
-            sphereBuffer = new ComputeBuffer(sizeof(Sphere)*20, sizeof(Sphere));
+            sphereBuffer = new ComputeBuffer(sizeof(Sphere)*spheres.Count, sizeof(Sphere));
             raytrace.SetBuffer(doRender, "spheres", sphereBuffer);
-            boxBuffer = new ComputeBuffer(sizeof(Box)*20, sizeof(Box));
+            boxBuffer = new ComputeBuffer(sizeof(Box)*boxes.Count, sizeof(Box));
             raytrace.SetBuffer(doRender, "boxes", boxBuffer);
         }
     }
